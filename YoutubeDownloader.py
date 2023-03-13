@@ -8,10 +8,13 @@ from time import sleep
 from pytube import YouTube
 
 # consts and global variables #
-VIDEO_DOWNLOAD_PATH = os.path.dirname(os.path.realpath(__file__)) + '\\env\\Video\\'
-AUDIO_DOWNLOAD_PATH = os.path.dirname(os.path.realpath(__file__)) + '\\env\\Audio\\'
-TEMP_PATH = os.path.dirname(os.path.realpath(__file__)) + '\\env\\Temp\\'
+ENV = os.path.dirname(os.path.realpath(__file__)) + '\\env'
 
+VIDEO_DOWNLOAD_PATH = ENV + '\\Video\\'
+AUDIO_DOWNLOAD_PATH = ENV + '\\Audio\\'
+TEMP_PATH = ENV + '\\Temp\\'
+
+PATHS = [VIDEO_DOWNLOAD_PATH, AUDIO_DOWNLOAD_PATH, TEMP_PATH]
 constBtoMb = pow(10, 6)
 
 
@@ -102,10 +105,26 @@ def input_management(videoObjects):
 
 #################################################################################################################
 # MAIN #
+def envCheck():
+    for path in PATHS:
+        atLeastOneCreated = False
+        try:
+            a = repr(path)
+            os.makedirs(path)
+            atLeastOneCreated = True            # Never gets here if all folders exist
+            pathname = path.replace("\\", "#")
+            pathname = pathname.split("#")[-2]
+            sys.stdout.write("Creating " + pathname + " folder inside env.\n")
+        except FileExistsError as e:
+            continue
+
+    if atLeastOneCreated:
+        sys.stdout.write("Done\n\n")
 
 
 if __name__ == '__main__':
-    #TODO Remove not admitted characters in filename
+    # TODO Remove not admitted characters in filename
+    envCheck()
     cleanTemp()
     while 1:
         audioVideoChoice = input("Only audio(0) or video(1)? Waiting input: ")
