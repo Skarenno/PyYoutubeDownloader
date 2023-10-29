@@ -50,6 +50,9 @@ def cleanTemp():
         except Exception as e:
             print('Failed to delete %s. Reason: %s' % (file_path, e))
 
+def cleantitle(name : str):
+    return name.replace("[^A-Za-z0-9()\\[\\]]", "")
+
 
 #################################################################################################################
 # DOWNLOAD FUNCTIONS #
@@ -62,8 +65,8 @@ def download(videoObjects, cRes):
         print('**** DOWNLOADING BOTH STREAMS AND MERGING USING FFMPEG ****')
         video = videoObjects.streams.filter(res=cRes + 'p').first()
         audio = videoObjects.streams.get_audio_only()
-        audio.download(filename=audio.title + "_audio.mp4", output_path=TEMP_PATH)
-        video.download(filename=video.title + ".mp4", output_path=TEMP_PATH)
+        audio.download(filename=cleantitle(audio.title) + "_audio.mp4", output_path=TEMP_PATH)
+        video.download(filename=cleantitle(video.title) + ".mp4", output_path=TEMP_PATH)
 
         # https://www.youtube.com/watch?v=BZP1rYjoBgI
         videoFile = ffmpeg.input(TEMP_PATH + video.title + '.mp4')
@@ -72,12 +75,12 @@ def download(videoObjects, cRes):
         ffmpeg.output(audioFile, videoFile, VIDEO_DOWNLOAD_PATH + video.title + ' (' + video.resolution + ')' + '.mp4') \
             .run()
     else:
-        video.download(output_path=VIDEO_DOWNLOAD_PATH, filename=video.title + ' (' + video.resolution + ')' + '.mp4')
+        video.download(output_path=VIDEO_DOWNLOAD_PATH, filename=cleantitle(video.title) + ' (' + video.resolution + ')' + '.mp4')
 
 
 def input_management(videoObjects):
     quitLoop = False
-
+    
     while not quitLoop:
         resList = set()
         # get possible Resolutions
@@ -111,7 +114,7 @@ def envCheck():
         try:
             a = repr(path)
             os.makedirs(path)
-            atLeastOneCreated = True            # Never gets here if all folders exist
+            atLeastOneCreated = True           
             pathname = path.replace("\\", "#")
             pathname = pathname.split("#")[-2]
             sys.stdout.write("Creating " + pathname + " folder inside env.\n")
@@ -125,8 +128,8 @@ def envCheck():
 if __name__ == '__main__':
     # TODO Remove not admitted characters in filename
     envCheck()
-    cleanTemp()
     while 1:
+        cleanTemp()
         audioVideoChoice = input("Only audio(0) or video(1)? Waiting input: ")
         sys.stdin.flush()
         if audioVideoChoice == '1' or audioVideoChoice == '0':
@@ -134,21 +137,23 @@ if __name__ == '__main__':
             youtubeObject = YouTube(URL, on_progress_callback=progress_function)
             print("You passed the video: " + youtubeObject.title)
 
-        match str(audioVideoChoice):
+        sys.stdin.flush()
+
+        match audioVideoChoice:
             case '0':
                 try:
                     if youtubeObject is None:
                         raise Exception
                     else:
                         audio = youtubeObject.streams.get_audio_only()
-                        audio.download(filename=audio.title + '.mp3', output_path=AUDIO_DOWNLOAD_PATH)
+                        audio.download(filename=cleantitle(audio.title) + '.mp3', output_path=AUDIO_DOWNLOAD_PATH)
                         print("******************** DONE ********************")
 
                 except Exception as e:
                     print("ERROR - " + str(e))
                     sleep(1)
 
-            case "1":
+            case '1':
                 try:
                     res = input_management(youtubeObject)
                     download(youtubeObject, res)
@@ -159,7 +164,5 @@ if __name__ == '__main__':
 
             case _:
                 print("Wrong input, try again")
-
-        cleanTemp()
 
     ## END OF WHILE ##
